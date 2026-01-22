@@ -1,4 +1,4 @@
-# LLM-assisted qualitative coding
+# Tab-to-Code: LLM-assisted qualitative coding
 An LLM-assisted React web application for qualitative coding.
 
-Accessible at: https://jsimell.github.io/LLMAssistedQualitativeCoding/
+Accessible at: https://jsimell.github.io/Tab-to-Code/
