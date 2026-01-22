@@ -1,0 +1,278 @@
+import { useCallback, useRef, useContext, useState } from "react";
+import {
+  HighlightSuggestion,
+  PassageId,
+  WorkflowContext,
+} from "../../../appContext/WorkflowContext";
+import { useCodeSuggestions } from "./useCodeSuggestions";
+import { useHighlightSuggestions } from "./useHighlightSuggestions";
+
+/**
+ * Central orchestrator for AI suggestions (highlight + code).
+ */
+export const useSuggestionsManager = () => {
+  const context = useContext(WorkflowContext);
+  if (!context)
+    throw new Error(
+      "useSuggestionsManager must be used within a WorkflowProvider"
+    );
+
+  const { passages, setPassages, aiSuggestionsEnabled } = context;
+
+  const { getCodeSuggestions, getAutocompleteSuggestion } = useCodeSuggestions();
+  const { getNextHighlightSuggestion } = useHighlightSuggestions();
+
+  // STATE
+  // For exporting highlight suggestion loading state, updated in an effect based on
+  const [isFetchingHighlightSuggestion, setIsFetchingHighlightSuggestion] = useState<boolean>(false);
+
+  // REFS
+  // Track the latest call timestamp per passage to ignore outdated results
+  const latestCallTimestamps = useRef<Map<PassageId, number>>(new Map());
+  // Track the number of in-flight highlight suggestion fetches
+  const ongoingHighlightFetchesCount = useRef<number>(0);
+
+  // MAIN FUNCTIONS
+
+  /** Requests the next highlight suggestion for the given passage. For text files, only searches within the passage.
+   * For CSV files, the LLM may return a suggestion from following passages as well.
+   * 
+   * @param id The ID of the passage for which to request a highlight suggestion.
+   * @param searchIndex The character index in the passage text from which to start searching for the next highlight suggestion.
+   */
+  const refreshHighlightSuggestion = async (
+    id: PassageId,
+    searchStartIndex: number,
+    callTimestamp: number
+  )=> {
+    if (!aiSuggestionsEnabled) return null;
+    const passage = passages.find((p) => p.id === id);
+    if (!passage || passage.isHighlighted) return null;
+
+    ongoingHighlightFetchesCount.current += 1;
+    setIsFetchingHighlightSuggestion(true);
+
+    let suggestion: HighlightSuggestion | null = null;
+    let forPassageId: PassageId | null = null;
+    try {
+      if (searchStartIndex >= passage.text.length) {
+        // No more text to search in, set suggestion to null
+        suggestion = null;
+      } else {
+        const result = await getNextHighlightSuggestion(passage, searchStartIndex);
+
+        if (result) {
+          suggestion = result.highlightSuggestion;
+          forPassageId = result.forPassageId;
+        } else {
+          suggestion = null;
+        }
+      }
+
+      // Only update if this is still the latest call
+      if (latestCallTimestamps.current.get(id) === callTimestamp) {
+        setPassages((prev) =>
+          prev.map((p) =>
+            p.id === forPassageId && !p.isHighlighted
+              ? { ...p, nextHighlightSuggestion: suggestion }
+              : p
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching highlight suggestion:", error);
+    } finally {
+      ongoingHighlightFetchesCount.current -= 1;
+      if (ongoingHighlightFetchesCount.current === 0) {
+        setIsFetchingHighlightSuggestion(false);
+      }
+      return { highlightSuggestion: suggestion, forPassageId: forPassageId };
+    }
+  };
+
+  /** Refreshes code suggestions for the given passage.
+   * @param id The ID of the passage for which to refresh code suggestions.
+   */
+  const refreshCodeSuggestions = async (
+    id: PassageId,
+    existingCodes: string[],
+    callTimestamp: number
+  ) => {
+    if (!aiSuggestionsEnabled) return;
+    const passage = passages.find((p) => p.id === id);
+    if (!passage || !passage.isHighlighted) return;
+
+    try {
+      const suggestions = await getCodeSuggestions(passage, existingCodes);
+
+      // Only update if this is still the latest call
+      if (latestCallTimestamps.current.get(id) === callTimestamp) {
+        setPassages((prev) =>
+          prev.map((p) =>
+            p.id === id && p.isHighlighted
+              ? {
+                  ...p,
+                  codeSuggestions: suggestions,
+                  nextHighlightSuggestion: null,
+                }
+              : p
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching code suggestions:", error);
+    }
+  };
+
+  /** Refreshes autocomplete suggestions for the given passage.
+   * @param id The ID of the passage for which to refresh autocomplete suggestions.
+   */
+  const refreshAutocompleteSuggestion = async (
+    id: PassageId,
+    existingCodes: string[],
+    currentUserInput: string,
+    callTimestamp: number
+  ) => {
+    if (!aiSuggestionsEnabled) return;
+    const passage = passages.find((p) => p.id === id);
+    if (!passage || !passage.isHighlighted) return;
+
+    try {
+      const suggestion: string = await getAutocompleteSuggestion(passage, existingCodes, currentUserInput);
+
+      // Only update if this is still the latest call
+      if (latestCallTimestamps.current.get(id) === callTimestamp) {
+        setPassages((prev) =>
+          prev.map((p) =>
+            p.id === id && p.isHighlighted
+              ? {
+                  ...p,
+                  autocompleteSuggestion: suggestion,
+                  nextHighlightSuggestion: null,
+                }
+              : p
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching autocomplete suggestion:", error);
+    }
+  };
+
+  /**
+   * Updates the autocomplete suggestions for the given passage.
+   * @param id The ID of the passage for which to update autocomplete suggestions.
+   * @param existingCodes The existing codes assigned to the passage.
+   * @param currentUserInput The current user input for which to get autocomplete suggestions.
+   */
+  const updateAutocompleteSuggestionForPassage = useCallback(async (id: PassageId, existingCodes: string[], currentUserInput: string) => {
+    if (!aiSuggestionsEnabled) return;
+    const callTimestamp = Date.now(); // Unique timestamp for this call
+    latestCallTimestamps.current.set(id, callTimestamp); // Mark as latest
+    const passage = passages.find((p) => p.id === id);
+    if (!passage || !passage.isHighlighted) return;
+
+    await refreshAutocompleteSuggestion(id, existingCodes, currentUserInput, callTimestamp);
+  }, [passages]);
+
+  /**
+   * Updates the code suggestions for the given passage.
+   * @param id The ID of the passage for which to update code suggestions.
+   */
+  const updateCodeSuggestionsForPassage = useCallback(async (id: PassageId, existingCodes: string[]) => {
+    if (!aiSuggestionsEnabled) return;
+    const callTimestamp = Date.now(); // Unique timestamp for this call
+    latestCallTimestamps.current.set(id, callTimestamp); // Mark as latest
+    const passage = passages.find((p) => p.id === id);
+    if (!passage || !passage.isHighlighted) return;
+
+    console.log("Updating code suggestions for a passage with existing codes:", existingCodes);
+    await refreshCodeSuggestions(id, existingCodes, callTimestamp);
+  }, [passages]);
+
+  /**
+   * Fetches a new highlight suggestion for the given passage, effectively declining the previous one.
+   * If the LLM returns with an empty suggestion, this will trigger a highlight fetch for the next unhighlighted passage.
+   * @param id The ID of the passage for which to decline the highlight suggestion.
+   */
+  const declineHighlightSuggestion = useCallback(
+    async (id: PassageId): Promise<PassageId | null> => {
+      const passage = passages.find((p) => p.id === id);
+      if (!passage || passage.isHighlighted) return null;
+
+      const suggestion = passage.nextHighlightSuggestion;
+      if (!suggestion) return null; // No suggestion to decline
+
+      const suggestionStartIdx = passage.text.indexOf(suggestion.passage);
+      if (suggestionStartIdx === -1) return null;
+
+      // Calculate new search start index to be after the declined suggestion
+      const searchStartIdx = suggestionStartIdx + suggestion.passage.length;
+
+      const callTimestamp = Date.now(); // Unique timestamp for this call
+      latestCallTimestamps.current.set(id, callTimestamp); // Mark as latest
+
+      const result = await refreshHighlightSuggestion(id, searchStartIdx, callTimestamp);
+      let forPassageId: PassageId | null = result?.forPassageId ?? null;
+
+      // If the LLM returned an empty suggestion, trigger a fetch for the next unhighlighted passage
+      if (
+        !result || !forPassageId || !result.highlightSuggestion || result.highlightSuggestion.passage.trim().length === 0
+      ) {
+        const nextPassageId = passages.find(p => p.order === passage.order + 1)?.id;
+        if (nextPassageId) {
+          forPassageId = await inclusivelyFetchHighlightSuggestionAfter(nextPassageId);
+        }
+      }
+      return forPassageId;
+    },
+    [passages]
+  );
+
+  /** Finds the first suitable non-highlighted passage starting from the given passage,
+   * and requests a new highlight suggestion for it.
+   * @param id The ID of the passage after which to update the highlight suggestion.
+   * @return The ID of the passage for which the highlight suggestion was updated, or null if none found, or AI suggestions are disabled.
+   */
+  const inclusivelyFetchHighlightSuggestionAfter = useCallback(async (id: PassageId) => {
+    if (!aiSuggestionsEnabled) return null;
+    const passage = passages.find((p) => p.id === id);
+    if (!passage) {
+      console.warn("Highlight suggestion fetch exited early because passage was not found for id:", id);
+      return null;
+    }
+    // Find the non-highlighted passages starting from the given passage
+    const candidates = passages.filter(
+      (p) => p.order >= passage.order && !p.isHighlighted && p.text.trim().length > 4   // Filter out also very short passages
+    );
+
+    // Fetch new highlight suggestions for these, until the LLM provides a valid one
+    for (const np of candidates) {
+      const callTimestamp = Date.now(); // Unique timestamp for this call
+      latestCallTimestamps.current.set(np.id, callTimestamp); // Mark as latest
+
+      const result = await refreshHighlightSuggestion(np.id, 0, callTimestamp);
+      
+      if (
+        result &&
+        result.highlightSuggestion &&
+        result.forPassageId &&
+        result.highlightSuggestion.passage.trim().length > 0 &&
+        result.highlightSuggestion.codes.length > 0
+      ) {
+        // Valid suggestion obtained, stop here
+        return result.forPassageId;
+      }
+    }
+    return null;
+  }, [passages]);
+
+  return {
+    declineHighlightSuggestion,
+    // updateSuggestionsForPassage,
+    updateAutocompleteSuggestionForPassage,
+    updateCodeSuggestionsForPassage,
+    inclusivelyFetchHighlightSuggestionAfter,
+    isFetchingHighlightSuggestion,
+  };
+};
