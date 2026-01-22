@@ -1,9 +1,9 @@
 {
-  "name": "llm-assisted-qualitative-coding",
+  "name": "tab-to-code",
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://jsimell.github.io/LLMAssistedQualitativeCoding",
+  "homepage": "https://jsimell.github.io/Tab-to-Code",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
