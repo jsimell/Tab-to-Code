@@ -290,7 +290,7 @@ const DataUploadCardContent = () => {
   return (
     <div className="flex flex-col gap-6 items-center">
       <p className="text-center">
-        Upload your data either as a text (.txt) file or in CSV format.
+        Load your data either as a text (.txt) file or in CSV format.
       </p>
       <input
         ref={fileInputRef}
