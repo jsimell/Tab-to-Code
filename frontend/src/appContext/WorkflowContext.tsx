@@ -145,8 +145,8 @@ export interface WorkflowContextType {
   examplesTrailingContextSize: number | null;
   setExamplesTrailingContextSize: Setter<number | null>;
 
-  randomFewShotExamplesCount: number;
-  setRandomFewShotExamplesCount: Setter<number>;
+  randomFewShotExamplesCount: number | null;
+  setRandomFewShotExamplesCount: Setter<number | null>;
 
   showCodingInstructionsOverlay: boolean;
   setShowCodingInstructionsOverlay: Setter<boolean>;
@@ -194,7 +194,7 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
   const [fewShotExamplesSelectionMode, setFewShotExamplesSelectionMode] = useState<"random" | "manual">("random");
   const [examplesPrecedingContextSize, setExamplesPrecedingContextSize] = useState<number | null>(15);
   const [examplesTrailingContextSize, setExamplesTrailingContextSize] = useState<number | null>(10);
-  const [randomFewShotExamplesCount, setRandomFewShotExamplesCount] = useState<number>(5);
+  const [randomFewShotExamplesCount, setRandomFewShotExamplesCount] = useState<number | null>(5);
   const [showCodingInstructionsOverlay, setShowCodingInstructionsOverlay] = useState<boolean>(true); // Show the coding instructions overlay on first load of the coding step
 
 

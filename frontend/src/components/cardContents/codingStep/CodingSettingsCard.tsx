@@ -229,7 +229,7 @@ const CodingSettingsCardContent = ({
                   value={randomFewShotExamplesCount ?? ""}
                   onChange={(e) =>
                     setRandomFewShotExamplesCount(
-                      e.target.value === "" ? 0 : Number(e.target.value)
+                      e.target.value === "" ? null : Number(e.target.value)
                     )
                   }
                   onBlur={(e) => {
