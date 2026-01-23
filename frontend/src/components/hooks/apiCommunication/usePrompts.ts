@@ -81,7 +81,7 @@ export const usePrompts = () => {
       const randomPassages = passages
         .filter((p) => p.isHighlighted && p.codeIds.length > 0 && p.id !== passageId && codes.filter((c) => p.codeIds.includes(c.id)).some((c) => c.code && c.code.trim().length > 0))
         .sort(() => 0.5 - Math.random())
-        .slice(0, randomFewShotExamplesCount)
+        .slice(0, randomFewShotExamplesCount ?? 0) // Default to 0 if null, but this should not happen due to UI constraints
         .map((p) => {
           const passageCodes = p.codeIds
             .map((cid) => codes.find((c) => c.id === cid)?.code || "")
@@ -429,8 +429,16 @@ Suggest codes for the TARGET PASSAGE that align with the research questions and 
 ** Based on the passage's existing codes, follow one of these two cases: **
 Case 1 - If the passage has NO existing codes:
   - Provide a comprehensive coding. Suggest up to 5 conceptually distinct codes capturing what the passage reveals in relation to the research questions.
+
 Case 2 - If the passage has existing codes:
-  - Suggest additional complementary codes that add new insights. Do not repeat or closely match existing codes. Total codes (existing + new) must be max 5.
+  - Suggest additional complementary codes that add new insights. Do NOT repeat or closely match existing codes. 
+  - Before suggesting any code, ensure that it adds a materially new meaning not already covered by existing codes.
+  - Treat paraphrases, synonyms, broader/narrower restatements, or wording-level variations as too similar and discard them.
+  - A new code must introduce at least one new aspect (e.g., actor, mechanism, consequence, condition, strategy, tension, evaluation, etc.).
+  - If all candidate codes are discarded as too similar, return [].
+  - Prefer returning [] over suggesting overlapping, weakly novel, or borderline codes.
+  - Suggest at most 2 codes in Case 2. Only suggest 2 if there are two clearly distinct new insights; otherwise return 0 or 1.
+  - Total codes (existing + new) must be max 5.
 
 In both cases:
 - Obey the USER PROVIDED GUIDELINES above (if provided).
