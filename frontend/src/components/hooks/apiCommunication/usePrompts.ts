@@ -67,8 +67,8 @@ export const usePrompts = () => {
         .map(
           (example) => `
   {
-    passageWithSurroundingContext: "${escapeForPrompt(example.precedingText + "<<<" + example.codedPassage + ">>>" + example.trailingText)}",
-    codes: [${example.codes
+    "passageWithSurroundingContext": "${escapeForPrompt(example.precedingText + "<<<" + example.codedPassage + ">>>" + example.trailingText)}",
+    "codes": [${example.codes
       .map((code) => `"${escapeForPrompt(code)}"`)
       .join(", ")}],
   }`
@@ -109,8 +109,8 @@ export const usePrompts = () => {
         .map(
           (example) => `
   {
-    passageWithSurroundingContext: "${escapeForPrompt(example.precedingText + "<<<" + example.codedPassage + ">>>" + example.trailingText)}",
-    codes: [${example.codes
+    "passageWithSurroundingContext": "${escapeForPrompt(example.precedingText + "<<<" + example.codedPassage + ">>>" + example.trailingText)}",
+    "codes": [${example.codes
       .map((code) => `"${escapeForPrompt(code)}"`)
       .join(", ")}],
   }`
@@ -142,12 +142,12 @@ Your task is to analyze the SEARCH AREA, and identify and code the FIRST passage
 You must respond only with the specified format.
 
 ## USER PROVIDED GUIDELINES
-Coding style: ${codingGuidelines.trim().length > 0 ? codingGuidelines : "-"}
-Passage selection style: ${highlightGuidelines?.trim().length > 0 ? highlightGuidelines : "-"}
+**Coding style:** ${codingGuidelines.trim().length > 0 ? codingGuidelines : "-"}
+**Passage selection style:** ${highlightGuidelines?.trim().length > 0 ? highlightGuidelines : "-"}
 
 ## RESEARCH CONTEXT
-Research questions: ${researchQuestions}
-Additional research context: ${contextInfo.trim().length > 0 ? contextInfo : "-"}
+**Research questions:** ${researchQuestions}
+**Additional research context:** ${contextInfo.trim().length > 0 ? contextInfo : "-"}
 
 ## TASK
 1. Review the codebook and coding style examples to understand the user's coding style.
@@ -171,23 +171,27 @@ Additional research context: ${contextInfo.trim().length > 0 ? contextInfo : "-"
 4. If there is no codeable passage in the SEARCH AREA, return an empty passage and empty codes.
 
 ## RESPONSE FORMAT
-Respond ONLY with a valid JavaScript object:
+Respond ONLY with a valid JavaScript object (omit markdown \`\`\`json tags):
+\`\`\`json
 {
   "passage": "exact, case-sensitive substring from SEARCH AREA (escaped for JSON)",
   "codes": ["code1", "code2", ...]
 }
+\`\`\`
 If no relevant passage is found:
+\`\`\`json
 {
   "passage": "",
   "codes": []
 }
-No explanations or extra text.
-No truncation indicators (e.g. "...").
-No JSON tags (\`\`\`json) or other markdown formatting.
-Codes must NOT contain semicolons (;).
-Use similar casing as the codebook, or default to lowercase.
-The "passage" MUST be an exact, case-sensitive substring of the SEARCH AREA.
-Escape special characters in "passage" (e.g. double quotes as \\", newlines as \\n, tabs as \\t).
+\`\`\`
+- No explanations or extra text.
+- No truncation indicators (e.g. "...").
+- No JSON tags (\`\`\`json) or other markdown formatting.
+- Codes must NOT contain semicolons (;).
+- Use similar casing as the codebook, or default to lowercase.
+- The "passage" MUST be an exact, case-sensitive substring of the SEARCH AREA.
+- Escape special characters in "passage" (e.g. double quotes as \\", newlines as \\n, tabs as \\t).
 
 ## AUTHORITY AND PRECEDENCE RULES (STRICT)
 When determining behavior:
@@ -199,7 +203,9 @@ All TASK requirements remain mandatory and must be fulfilled unless they directl
 
 ## USER'S CODING STYLE
 Few-shot examples of user coded passages (user highlighted passages marked in context with <<< >>>):
-[${constructFewShotExamplesString(dataIsCSV, null)}]
+[
+  ${constructFewShotExamplesString(dataIsCSV, null)}
+]
 
 ## CURRENT CODEBOOK
 [${constructCodebookString()}]
@@ -222,12 +228,12 @@ Your task is to analyze the SEARCH AREA, and identify and code the FIRST passage
 You must respond only with the specified format.
 
 ## USER PROVIDED GUIDELINES
-Coding style: ${codingGuidelines.trim().length > 0 ? codingGuidelines : "-"}
-Passage selection style: ${highlightGuidelines?.trim().length > 0 ? highlightGuidelines : "-"}
+**Coding style:** ${codingGuidelines.trim().length > 0 ? codingGuidelines : "-"}
+**Passage selection style:** ${highlightGuidelines?.trim().length > 0 ? highlightGuidelines : "-"}
 
 ## RESEARCH CONTEXT
-Research questions: ${researchQuestions}
-Additional research context: ${contextInfo.trim().length > 0 ? contextInfo : "-"}
+**Research questions:** ${researchQuestions}
+**Additional research context:** ${contextInfo.trim().length > 0 ? contextInfo : "-"}
 NOTE: The data is from a CSV file, where rows end with the token "\\u001E".
 
 ## TASK
@@ -264,14 +270,14 @@ If no relevant passage is found:
   "passage": "",
   "codes": []
 }
-No explanations or extra text.
-No truncation indicators (e.g. "...").
-No JSON tags (\`\`\`json) or other markdown formatting.
-Codes must NOT contain semicolons (;).
-Use similar casing as the codebook, or default to lowercase.
-The "passage" MUST be an exact, case-sensitive substring of the SEARCH AREA.
-Escape special characters in "passage" (e.g. double quotes as \\", newlines as \\n, tabs as \\t).
-Do not include the end of row token \\u001E in your response.
+- No explanations or extra text.
+- No truncation indicators (e.g. "...").
+- No JSON tags (\`\`\`json) or other markdown formatting.
+- Codes must NOT contain semicolons (;).
+- Use similar casing as the codebook, or default to lowercase.
+- The "passage" MUST be an exact, case-sensitive substring of the SEARCH AREA.
+- Escape special characters in "passage" (e.g. double quotes as \\", newlines as \\n, tabs as \\t).
+- Do not include the end of row token \\u001E in your response.
 
 ## AUTHORITY AND PRECEDENCE RULES (STRICT)
 When determining behavior:
@@ -283,7 +289,9 @@ All TASK requirements remain mandatory and must be fulfilled unless they directl
 
 ## USER'S CODING STYLE
 Few-shot examples of user coded passages (user highlighted passages marked in context with <<< >>>):
-[${constructFewShotExamplesString(dataIsCSV, null)}]
+[
+  ${constructFewShotExamplesString(dataIsCSV, null)}
+]
 
 ## CURRENT CODEBOOK
 [${constructCodebookString()}]
@@ -362,8 +370,8 @@ All TASK requirements remain mandatory and must be fulfilled unless they directl
 ${codingGuidelines.trim().length > 0 ? codingGuidelines : "None."}
 
 ## RESEARCH CONTEXT
-Research questions: ${researchQuestions}
-Additional research context: ${contextInfo.trim().length > 0 ? contextInfo : "-"}
+**Research questions:** ${researchQuestions}
+**Additional research context:** ${contextInfo.trim().length > 0 ? contextInfo : "-"}
 ${dataIsCSV ? `- NOTE: Data is from a CSV file where rows end with: "\\u001E".` : ""}
 
 ## CURRENT CODEBOOK
@@ -415,8 +423,8 @@ You are a qualitative coding assistant. Suggest relevant codes for the TARGET PA
 ${codingGuidelines.trim().length > 0 ? codingGuidelines : "None."}
 
 ## RESEARCH CONTEXT
-Research questions: ${researchQuestions}
-Additional research context: ${contextInfo.trim().length > 0 ? contextInfo : "-"}
+**Research questions:** ${researchQuestions}
+**Additional research context:** ${contextInfo.trim().length > 0 ? contextInfo : "-"}
 ${dataIsCSV ? `- NOTE: Data is from a CSV file where rows end with: "\\u001E".` : ""}
 
 ## TASK
