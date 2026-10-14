@@ -1,8 +1,6 @@
 # Tab-to-Code: Adaptive, Passage-Level AI Assistance for Qualitative Data Coding
 Jiri Simell, 2026
 
-This tool was developed as part of my master's thesis, which is available at: https://aaltodoc.aalto.fi/server/api/core/bitstreams/473b9f85-a985-4606-a318-40b183c85512/content.
-
 **TOOL ACCESSIBLE AT:** https://jsimell.github.io/Tab-to-Code/ 
 (NOTE: You need to provide your own API key to use the tool. The key is not uploaded anywhere, as the tool runs entirely in the browser.)
 
@@ -12,4 +10,5 @@ Qualitative data coding---the process of highlighting passages in text and annot
 ## Demo Video
 A demo video of the tool can be found at: https://drive.google.com/file/d/1JDpx1iE1-APNpNCpbTzE-XqoaaODDWVA/view?usp=sharing 
 
-## Thesis 
+## Thesis
+This tool was developed as part of my master's thesis, which is available at: https://aaltodoc.aalto.fi/server/api/core/bitstreams/473b9f85-a985-4606-a318-40b183c85512/content.
