@@ -8,7 +8,9 @@ Qualitative data coding---the process of highlighting passages in text and annot
 
 
 ## Demo Video
-A demo video of the tool can be found at: https://drive.google.com/file/d/1JDpx1iE1-APNpNCpbTzE-XqoaaODDWVA/view?usp=sharing 
+https://github.com/user-attachments/assets/e5cf5101-3c87-487d-acda-9e29741ac3aa
+
+(Note: A 1080p video can be found at: https://drive.google.com/file/d/1JDpx1iE1-APNpNCpbTzE-XqoaaODDWVA/view?usp=sharing)
 
 ## Thesis
 This tool was developed as part of my master's thesis, which is available at: https://aaltodoc.aalto.fi/server/api/core/bitstreams/473b9f85-a985-4606-a318-40b183c85512/content.
